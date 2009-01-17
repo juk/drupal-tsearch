@@ -642,15 +642,21 @@ function template_preprocess_tsearch_block_form(&$variables) {
  * Perform a standard search on the given keys, and return the formatted results.
  */
 function tsearch_data($keys = NULL, $type = 'node') {
+  $lang = $GLOBALS['language']->name;
+  if (empty($lang)) {
+    $lang = 'English';
+  }
+  $lang= drupal_strtolower($lang);
+
   $count_query = <<<SQL
 SELECT COUNT(t.nid)
-FROM tsearch_node AS t, plainto_tsquery('%s') query
+FROM tsearch_node AS t, plainto_tsquery('$lang', '%s') query
 WHERE query @@ node_tsvector
 SQL;
 
   $query = <<<SQL
 SELECT t.nid, ts_rank_cd(node_tsvector, query, 16) AS rank
-FROM tsearch_node AS t, plainto_tsquery('%s') query
+FROM tsearch_node AS t, plainto_tsquery('$lang', '%s') query
 WHERE query @@ node_tsvector
 ORDER BY rank DESC
 SQL;
@@ -732,8 +738,14 @@ function _tsearch_render_node_result($nid, $rank) {
  *    The current search keys
  */
 function _tsearch_get_headlines($results, $keys) {
+  $lang = $GLOBALS['language']->name;
+  if (empty($lang)) {
+    $lang = 'English';
+  }
+  $lang= drupal_strtolower($lang);
+
   $headline_query = <<<SQL
-SELECT ts_headline('%s', '%s', plainto_tsquery('%s'),
+SELECT ts_headline('%s', '%s', plainto_tsquery('$lang', '%s'),
 'StartSel = <strong>, StopSel = </strong>, MaxWords=100'
 );
 SQL;
