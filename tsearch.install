@@ -71,8 +71,8 @@ SQL;
 
   db_query($sql);
 
-  // The main search index. Change to GIST if you have very frequent content changes.
-  db_query("CREATE INDEX tsearch_search_idx
+  // The main tsearch index. Change to GIST if you have very frequent content changes.
+  db_query("CREATE INDEX tsearch_tsvector_idx
             ON tsearch_node
             USING gin (node_tsvector);");
 
@@ -91,5 +91,5 @@ function tsearch_uninstall() {
 
   variable_del('minimum_word_size');
   variable_del('overlap_cjk');
-  variable_del('search_cron_limit');
+  variable_del('tsearch_cron_limit');
 }

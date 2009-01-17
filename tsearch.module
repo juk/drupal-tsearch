@@ -1,9 +1,9 @@
 <?php
-// $Id: search.module,v 1.250.2.4 2008/09/17 06:42:20 goba Exp $
+// $Id: tsearch.module,v 1.250.2.4 2008/09/17 06:42:20 goba Exp $
 
 /**
  * @file
- * Enables site-wide keyword searching.
+ * Enables site-wide full text keyword searching.
  */
 
 /**
@@ -95,14 +95,14 @@ define('PREG_CLASS_CJK', '\x{3041}-\x{30ff}\x{31f0}-\x{31ff}\x{3400}-\x{4db5}'.
  */
 function tsearch_help($path, $arg) {
   switch ($path) {
-    case 'admin/help#search':
-      $output = '<p>'. t('The search module adds the ability to search for content by keywords. Search is often the only practical way to find content on a large site, and is useful for finding both users and posts.') .'</p>';
-      $output .= '<p>'. t('To provide keyword searching, the search engine maintains an index of words found in your site\'s content. To build and maintain this index, a correctly configured <a href="@cron">cron maintenance task</a> is required. Indexing behavior can be adjusted using the <a href="@searchsettings">search settings page</a>; for example, the <em>Number of items to index per cron run</em> sets the maximum number of items indexed in each pass of a <a href="@cron">cron maintenance task</a>. If necessary, reduce this number to prevent timeouts and memory errors when indexing.', array('@cron' => url('admin/reports/status'), '@searchsettings' => url('admin/settings/search'))) .'</p>';
-      $output .= '<p>'. t('For more information, see the online handbook entry for <a href="@search">Search module</a>.', array('@search' => 'http://drupal.org/handbook/modules/search/')) .'</p>';
+    case 'admin/help#tsearch':
+      $output = '<p>'. t('The tsearch module adds the ability to search for content by keywords with postgresql\'s tsearch2 engine.') .'</p>';
+      $output .= '<p>'. t('To provide keyword searching, the tsearch engine maintains an index of words found in your site\'s content. To build and maintain this index, a correctly configured <a href="@cron">cron maintenance task</a> is required. Indexing behavior can be adjusted using the <a href="@tsearchsettings">tsearch settings page</a>; for example, the <em>Number of items to index per cron run</em> sets the maximum number of items indexed in each pass of a <a href="@cron">cron maintenance task</a>. If necessary, reduce this number to prevent timeouts and memory errors when indexing.', array('@cron' => url('admin/reports/status'), '@tsearchsettings' => url('admin/settings/tsearch'))) .'</p>';
+      $output .= '<p>'. t('For more information, see the online handbook entry for <a href="@tsearch">TSearch module</a>.', array('@tsearch' => 'http://drupal.org/project/tsearch/')) .'</p>';
       return $output;
-    case 'admin/settings/search':
-      return '<p>'. t('The search engine maintains an index of words found in your site\'s content. To build and maintain this index, a correctly configured <a href="@cron">cron maintenance task</a> is required. Indexing behavior can be adjusted using the settings below.', array('@cron' => url('admin/reports/status'))) .'</p>';
-    case 'search#noresults':
+    case 'admin/settings/tsearch':
+      return '<p>'. t('The tsearch engine maintains an index of words found in your site\'s content. To build and maintain this index, a correctly configured <a href="@cron">cron maintenance task</a> is required. Indexing behavior can be adjusted using the settings below.', array('@cron' => url('admin/reports/status'))) .'</p>';
+    case 'tsearch#noresults':
       return t('<ul>
 <li>Check if your spelling is correct.</li>
 <li>Remove quotes around phrases to match each word individually: <em>"blue smurf"</em> will match less than <em>blue smurf</em>.</li>
@@ -141,7 +141,7 @@ function tsearch_theme() {
  * Implementation of hook_perm().
  */
 function tsearch_perm() {
-  return array('search content', 'use advanced search', 'administer search');
+  return array('tsearch content', 'use advanced tsearch', 'administer tsearch');
 }
 
 /**
@@ -149,14 +149,14 @@ function tsearch_perm() {
  */
 function tsearch_block($op = 'list', $delta = 0) {
   if ($op == 'list') {
-    $blocks[0]['info'] = t('Search form');
+    $blocks[0]['info'] = t('TSearch form');
     // Not worth caching.
     $blocks[0]['cache'] = BLOCK_NO_CACHE;
     return $blocks;
   }
-  else if ($op == 'view' && user_access('search content')) {
+  else if ($op == 'view' && user_access('tsearch content')) {
     $block['content'] = drupal_get_form('tsearch_block_form');
-    $block['subject'] = t('Search');
+    $block['subject'] = t('TSearch');
     return $block;
   }
 }
@@ -166,18 +166,18 @@ function tsearch_block($op = 'list', $delta = 0) {
  */
 function tsearch_menu() {
   $items['tsearch'] = array(
-    'title' => 'Search',
+    'title' => 'TSearch',
     'page callback' => 'tsearch_view',
-    'access arguments' => array('search content'),
+    'access arguments' => array('tsearch content'),
     'type' => MENU_SUGGESTED_ITEM,
     'file' => 'tsearch.pages.inc',
   );
   $items['admin/settings/tsearch'] = array(
     'title' => 'TSearch settings',
-    'description' => 'Configure relevance settings for search and other indexing options',
+    'description' => 'Configure relevance settings for tsearch and other indexing options',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('tsearch_admin_settings'),
-    'access arguments' => array('administer search'),
+    'access arguments' => array('administer tsearch'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'tsearch.admin.inc',
   );
@@ -185,21 +185,21 @@ function tsearch_menu() {
     'title' => 'Clear index',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('tsearch_wipe_confirm'),
-    'access arguments' => array('administer search'),
+    'access arguments' => array('administer tsearch'),
     'type' => MENU_CALLBACK,
     'file' => 'tsearch.admin.inc',
   );
-  $items['admin/reports/search'] = array(
-    'title' => 'Top search phrases',
-    'description' => 'View most popular search phrases.',
+  $items['admin/reports/tsearch'] = array(
+    'title' => 'Top tsearch phrases',
+    'description' => 'View most popular tsearch phrases.',
     'page callback' => 'dblog_top',
-    'page arguments' => array('search'),
+    'page arguments' => array('tsearch'),
     'access arguments' => array('access site reports'),
     'file' => 'dblog.admin.inc',
     'file path' => drupal_get_path('module', 'dblog'),
   );
 
-  foreach (module_implements('search') as $name) {
+  foreach (module_implements('tsearch') as $name) {
     $items['tsearch/'. $name .'/%menu_tail'] = array(
       'title callback' => 'module_invoke',
       'title arguments' => array($name, 'tsearch', 'name', TRUE),
@@ -216,11 +216,11 @@ function tsearch_menu() {
 }
 
 function _tsearch_menu($name) {
-  return user_access('search content') && module_invoke($name, 'search', 'name');
+  return user_access('tsearch content') && module_invoke($name, 'tsearch', 'name');
 }
 
 /**
- * Wipes a part of or the entire search index.
+ * Wipes a part of or the entire tsearch index.
  *
  * @param $sid
  *  (optional) The SID of the item to wipe. If specified, $type must be passed
@@ -374,21 +374,25 @@ function tsearch_node_language_name($node) {
   if (!empty($node->language) && function_exists('_locale_get_predefined_list')) {
     $predef = _locale_get_predefined_list();
     $result = $predef[$node->language][0];
+//syslog(LOG_DEBUG, "drupal-6.8:tsearch.module:predef'node->lanuage: $result");
 
     // If the above didn't work, try loading the language with a more expensive call.
     // Probably only used for custom languages.
     if (empty($result)) {
       $result = locale_language_name($node->language);
+//syslog(LOG_DEBUG, "drupal-6.8:tsearch.module:locale'node->lanuage: $result");
     }
   }
   // Fall back to the default site language.
   if (empty($result)) {
     $result = $GLOBALS['language']->name;
+//syslog(LOG_DEBUG, "drupal-6.8:tsearch.module:GLOBALS'lanuage: $result");
   }
 
   // A last desparate measure if none of the above worked, default to English.
   if (empty($result)) {
     $result = 'English';
+//syslog(LOG_DEBUG, "drupal-6.8:tsearch.module:default: $lan");
   }
 
   return $result;
@@ -416,7 +420,7 @@ function tsearch_simplify($text) {
   $text = strip_tags($text);
 
   // The dot, underscore and dash are simply removed. This allows meaningful
-  // search behavior with acronyms and URLs.
+  // tsearch behavior with acronyms and URLs.
   $text = preg_replace('/[._-]+/', '', $text);
 
   // With the exception of the rules above, we consider all punctuation,
@@ -427,11 +431,11 @@ function tsearch_simplify($text) {
 }
 
 /**
- * Invokes hook_search_preprocess() in modules.
+ * Invokes hook_tsearch_preprocess() in modules.
  */
 function tsearch_invoke_preprocess(&$text) {
-  foreach (module_implements('search_preprocess') as $module) {
-    $text = module_invoke($module, 'search_preprocess', $text);
+  foreach (module_implements('tsearch_preprocess') as $module) {
+    $text = module_invoke($module, 'tsearch_preprocess', $text);
   }
 }
 
@@ -463,7 +467,7 @@ function tsearch_comment($a1, $op) {
 }
 
 /**
- * Helper function for grabbing search keys.
+ * Helper function for grabbing tsearch keys.
  */
 function tsearch_get_keys() {
   static $return;
@@ -478,47 +482,47 @@ function tsearch_get_keys() {
 }
 
 /**
- * @defgroup search Search interface
+ * @defgroup tsearch Search interface
  * @{
- * The Drupal search interface manages a global search mechanism.
+ * The Drupal tsearch interface manages a global search mechanism.
  *
  * Modules may plug into this system to provide searches of different types of
- * data. Most of the system is handled by search.module, so this must be enabled
- * for all of the search features to work.
+ * data. Most of the system is handled by tsearch.module, so this must be enabled
+ * for all of the tsearch features to work.
  *
- * There are three ways to interact with the search system:
+ * There are three ways to interact with the tsearch system:
  * - Specifically for searching nodes, you can implement nodeapi('update index')
- *   and nodeapi('search result'). However, note that the search system already
+ *   and nodeapi('tsearch result'). However, note that the tsearch system already
  *   indexes all visible output of a node, i.e. everything displayed normally
  *   by hook_view() and hook_nodeapi('view'). This is usually sufficient.
  *   You should only use this mechanism if you want additional, non-visible data
  *   to be indexed.
- * - Implement hook_search(). This will create a search tab for your module on
- *   the /search page with a simple keyword search form. You may optionally
- *   implement hook_search_item() to customize the display of your results.
+ * - Implement hook_tsearch(). This will create a tsearch tab for your module on
+ *   the /tsearch page with a simple keyword tsearch form. You may optionally
+ *   implement hook_tsearch_item() to customize the display of your results.
  * - Implement hook_update_index(). This allows your module to use Drupal's
  *   HTML indexing mechanism for searching full text efficiently.
  *
- * If your module needs to provide a more complicated search form, then you need
- * to implement it yourself without hook_search(). In that case, you should
- * define it as a local task (tab) under the /search page (e.g. /search/mymodule)
+ * If your module needs to provide a more complicated tsearch form, then you need
+ * to implement it yourself without hook_tsearch(). In that case, you should
+ * define it as a local task (tab) under the /tsearch page (e.g. /tsearch/mymodule)
  * so that users can easily find it.
  */
 
 /**
- * Render a search form.
+ * Render a tsearch form.
  *
  * @param $action
- *   Form action. Defaults to "search".
+ *   Form action. Defaults to "tsearch".
  * @param $keys
- *   The search string entered by the user, containing keywords for the search.
+ *   The search string entered by the user, containing keywords for the tsearch.
  * @param $type
  *   The type of search to render the node for. Must be the name of module
- *   which implements hook_search(). Defaults to 'node'.
+ *   which implements hook_tsearch(). Defaults to 'node'.
  * @param $prompt
  *   A piece of text to put before the form (e.g. "Enter your keywords")
  * @return
- *   An HTML string containing the search form.
+ *   An HTML string containing the tsearch form.
  */
 function tsearch_form(&$form_state, $action = '', $keys = '', $type = NULL, $prompt = NULL) {
 
@@ -547,29 +551,29 @@ function tsearch_form(&$form_state, $action = '', $keys = '', $type = NULL, $pro
     '#maxlength' => 255,
   );
   // processed_keys is used to coordinate keyword passing between other forms
-  // that hook into the basic search form.
+  // that hook into the basic tsearch form.
   $form['basic']['inline']['processed_keys'] = array('#type' => 'value', '#value' => array());
-  $form['basic']['inline']['submit'] = array('#type' => 'submit', '#value' => t('Search'));
+  $form['basic']['inline']['submit'] = array('#type' => 'submit', '#value' => t('TSearch'));
 
   return $form;
 }
 
 /**
- * Form builder; Output a search form for the search block and the theme's search box.
+ * Form builder; Output a tsearch form for the tsearch block and the theme's tsearch box.
  *
  * @ingroup forms
  * @see tsearch_box_form_submit()
- * @see theme_search_box_form()
+ * @see theme_tsearch_box_form()
  */
 function tsearch_box(&$form_state, $form_id) {
   $form[$form_id] = array(
-    '#title' => t('Search this site'),
+    '#title' => t('TSearch this site'),
     '#type' => 'textfield',
     '#size' => 15,
     '#default_value' => '',
-    '#attributes' => array('title' => t('Enter the terms you wish to search for.')),
+    '#attributes' => array('title' => t('Enter the terms you wish to tsearch for.')),
   );
-  $form['submit'] = array('#type' => 'submit', '#value' => t('Search'));
+  $form['submit'] = array('#type' => 'submit', '#value' => t('TSearch'));
   $form['#submit'][] = 'tsearch_box_form_submit';
   $form['#validate'][] = 'tsearch_box_form_validate';
 
@@ -577,7 +581,7 @@ function tsearch_box(&$form_state, $form_id) {
 }
 
 /**
- * Process a block search form submission.
+ * Process a block tsearch form submission.
  */
 function tsearch_box_form_submit($form, &$form_state) {
   $form_id = $form['form_id']['#value'];
@@ -585,15 +589,15 @@ function tsearch_box_form_submit($form, &$form_state) {
 }
 
 /**
- * Process variables for search-theme-form.tpl.php.
+ * Process variables for tsearch-theme-form.tpl.php.
  *
  * The $variables array contains the following arguments:
  * - $form
  *
- * @see search-theme-form.tpl.php
+ * @see tsearch-theme-form.tpl.php
  */
 function template_preprocess_tsearch_theme_form(&$variables) {
-  $variables['search'] = array();
+  $variables['tsearch'] = array();
   $hidden = array();
   // Provide variables named after form keys so themers can print each element independently.
   foreach (element_children($variables['form']) as $key) {
@@ -602,25 +606,25 @@ function template_preprocess_tsearch_theme_form(&$variables) {
       $hidden[] = drupal_render($variables['form'][$key]);
     }
     else {
-      $variables['search'][$key] = drupal_render($variables['form'][$key]);
+      $variables['tsearch'][$key] = drupal_render($variables['form'][$key]);
     }
   }
   // Hidden form elements have no value to themers. No need for separation.
-  $variables['search']['hidden'] = implode($hidden);
+  $variables['tsearch']['hidden'] = implode($hidden);
   // Collect all form elements to make it easier to print the whole form.
-  $variables['search_form'] = implode($variables['search']);
+  $variables['tsearch_form'] = implode($variables['tsearch']);
 }
 
 /**
- * Process variables for search-block-form.tpl.php.
+ * Process variables for tsearch-block-form.tpl.php.
  *
  * The $variables array contains the following arguments:
  * - $form
  *
- * @see search-block-form.tpl.php
+ * @see tsearch-block-form.tpl.php
  */
 function template_preprocess_tsearch_block_form(&$variables) {
-  $variables['search'] = array();
+  $variables['tsearch'] = array();
   $hidden = array();
   // Provide variables named after form keys so themers can print each element independently.
   foreach (element_children($variables['form']) as $key) {
@@ -629,17 +633,17 @@ function template_preprocess_tsearch_block_form(&$variables) {
       $hidden[] = drupal_render($variables['form'][$key]);
     }
     else {
-      $variables['search'][$key] = drupal_render($variables['form'][$key]);
+      $variables['tsearch'][$key] = drupal_render($variables['form'][$key]);
     }
   }
   // Hidden form elements have no value to themers. No need for separation.
-  $variables['search']['hidden'] = implode($hidden);
+  $variables['tsearch']['hidden'] = implode($hidden);
   // Collect all form elements to make it easier to print the whole form.
-  $variables['search_form'] = implode($variables['search']);
+  $variables['tsearch_form'] = implode($variables['tsearch']);
 }
 
 /**
- * Perform a standard search on the given keys, and return the formatted results.
+ * Perform a standard tsearch on the given keys, and return the formatted results.
  */
 function tsearch_data($keys = NULL, $type = 'node') {
   $lang = $GLOBALS['language']->name;
@@ -667,14 +671,14 @@ SQL;
     $results[] = _tsearch_render_node_result($row['nid'], $row['rank']);
   }
 
-  // Get a highlighted snippet of the search results
+  // Get a highlighted snippet of the tsearch results
   $results = _tsearch_get_headlines($results, $keys);
 
   return $results;
 }
 
 /**
- * @} End of "defgroup search".
+ * @} End of "defgroup tsearch".
  */
 
 function tsearch_forms() {
@@ -695,7 +699,7 @@ function tsearch_forms() {
  * @param integer $nid
  *    The node ID of the matched node.
  * @param float $rank
- *    The search rank/score
+ *    The tsearch rank/score
  * @return array
  *    Structured result data array.
  */
@@ -711,7 +715,7 @@ function _tsearch_render_node_result($nid, $rank) {
   // Fetch terms for snippet.
   $node->body .= module_invoke('taxonomy', 'nodeapi', $node, 'update index');
 
-  $extra = node_invoke_nodeapi($node, 'search result');
+  $extra = node_invoke_nodeapi($node, 'tsearch result');
   $data = array(
     'link' => url('node/'. $nid, array('absolute' => TRUE)),
     'type' => check_plain(node_get_types('name', $node)),
@@ -721,21 +725,21 @@ function _tsearch_render_node_result($nid, $rank) {
     'node' => $node,
     'extra' => $extra,
     'score' => $rank,
-    'snippet' => ''// search_excerpt($keys, $node->body),
+    'snippet' => ''// tsearch_excerpt($keys, $node->body),
   );
 
   return $data;
 }
 
 /**
- * Get a highlighted snippet of the search result
+ * Get a highlighted snippet of the tsearch result
  *
  * Uses PostgreSQLs ts_headline function to generate the snippet
  *
  * @param array $results
- *    The search results we're working on.
+ *    The tsearch results we're working on.
  * @param string $keys
- *    The current search keys
+ *    The current tsearch keys
  */
 function _tsearch_get_headlines($results, $keys) {
   $lang = $GLOBALS['language']->name;

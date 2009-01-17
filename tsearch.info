@@ -1,4 +1,9 @@
-; $Id: search.info,v 1.4 2007/06/08 05:50:55 dries Exp $
+; $Id: tsearch.info,v 1.4 2007/06/08 05:50:55 dries Exp $
 name = TSearch
 description = Replacement of core search module, utilizing the advanced search features of newer versions of PostgreSQL.
 core = 6.x
+
+; Information added by j.kuwamura on 2009-01-14
+version = "6.x-0.1"
+project = "drupal"
+datestamp = "1231893907"

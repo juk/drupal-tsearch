@@ -1,22 +1,22 @@
 <?php
-// $Id: search-result.tpl.php,v 1.1.2.1 2008/08/28 08:21:44 dries Exp $
+// $Id: tsearch-result.tpl.php,v 1.1.2.1 2008/08/28 08:21:44 dries Exp $
 
 /**
- * @file search-result.tpl.php
- * Default theme implementation for displaying a single search result.
+ * @file tsearch-result.tpl.php
+ * Default theme implementation for displaying a single tsearch result.
  *
- * This template renders a single search result and is collected into
- * search-results.tpl.php. This and the parent template are
+ * This template renders a single tsearch result and is collected into
+ * tsearch-results.tpl.php. This and the parent template are
  * dependent to one another sharing the markup for definition lists.
  *
  * Available variables:
  * - $url: URL of the result.
  * - $title: Title of the result.
- * - $snippet: A small preview of the result. Does not apply to user searches.
+ * - $snippet: A small preview of the result. Does not apply to user tsearches.
  * - $info: String of all the meta information ready for print. Does not apply
- *   to user searches.
+ *   to user tsearches.
  * - $info_split: Contains same data as $info, split into a keyed array.
- * - $type: The type of search, e.g., "node" or "user".
+ * - $type: The type of tsearch, e.g., "node" or "user".
  *
  * Default keys within $info_split:
  * - $info_split['type']: Node type.
@@ -29,9 +29,9 @@
  *   being the count. Depends on upload.module.
  *
  * Since $info_split is keyed, a direct print of the item is possible.
- * This array does not apply to user searches so it is recommended to check
+ * This array does not apply to user tsearches so it is recommended to check
  * for their existance before printing. The default keys of 'type', 'user' and
- * 'date' always exist for node searches. Modules may provide other data.
+ * 'date' always exist for node tsearches. Modules may provide other data.
  *
  *   <?php if (isset($info_split['comment'])) : ?>
  *     <span class="info-comment">
@@ -43,7 +43,7 @@
  *
  *   <?php print '<pre>'. check_plain(print_r($info_split, 1)) .'</pre>'; ?>
  *
- * @see template_preprocess_search_result()
+ * @see template_preprocess_tsearch_result()
  */
 ?>
 <dt class="title">
@@ -51,9 +51,9 @@
 </dt>
 <dd>
   <?php if ($snippet) : ?>
-    <p class="search-snippet">…<?php print $snippet; ?>…</p>
+    <p class="tsearch-snippet">…<?php print $snippet; ?>…</p>
   <?php endif; ?>
   <?php if ($info) : ?>
-  <p class="search-info"><?php print $info; ?></p>
+  <p class="tsearch-info"><?php print $info; ?></p>
   <?php endif; ?>
 </dd>

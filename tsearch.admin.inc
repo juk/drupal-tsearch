@@ -1,9 +1,9 @@
 <?php
-// $Id: search.admin.inc,v 1.4 2008/01/08 10:35:42 goba Exp $
+// $Id: tsearch.admin.inc,v 1.4 2008/01/08 10:35:42 goba Exp $
 
 /**
  * @file
- * Admin page callbacks for the search module.
+ * Admin page callbacks for the tsearch module.
  */
 
 /**
@@ -11,7 +11,7 @@
  */
 function tsearch_wipe_confirm() {
   return confirm_form(array(), t('Are you sure you want to re-index the site?'),
-                  'admin/settings/search', t(' The search index is not cleared but systematically updated to reflect the new settings. Searching will continue to work but new content won\'t be indexed until all existing content has been re-indexed. This action cannot be undone.'), t('Re-index site'), t('Cancel'));
+                  'admin/settings/tsearch', t(' The tsearch index is not cleared but systematically updated to reflect the new settings. Tsearching will continue to work but new content won\'t be indexed until all existing content has been re-indexed. This action cannot be undone.'), t('Re-index site'), t('Cancel'));
 }
 
 /**
@@ -21,13 +21,13 @@ function tsearch_wipe_confirm_submit(&$form, &$form_state) {
   if ($form['confirm']) {
     tsearch_wipe();
     drupal_set_message(t('The index will be rebuilt.'));
-    $form_state['redirect'] = 'admin/settings/search';
+    $form_state['redirect'] = 'admin/settings/tsearch';
     return;
   }
 }
 
 /**
- * Menu callback; displays the search module settings page.
+ * Menu callback; displays the tsearch module settings page.
  *
  * @ingroup forms
  * @see system_settings_form()
