@@ -72,12 +72,12 @@ SQL;
   db_query($sql);
 
   // The main search index. Change to GIST if you have very frequent content changes.
-  db_query("CREATE INDEX search_idx
+  db_query("CREATE INDEX tsearch_search_idx
             ON tsearch_node
             USING gin (node_tsvector);");
 
   // Index for the updated column.
-  db_query("CREATE INDEX updated_idx
+  db_query("CREATE INDEX tsearch_updated_idx
             ON tsearch_node
             USING btree (updated);");
 }
